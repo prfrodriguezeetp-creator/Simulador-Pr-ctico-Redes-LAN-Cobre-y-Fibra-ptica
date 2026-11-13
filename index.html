@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0369a1">
+<title>Simulador Práctico: Redes LAN, Cobre y Fibra Óptica</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#eef2f7; --card:#ffffff; --ink:#0f172a; --muted:#475569;
+    --line:#d7e0ea; --brand:#0369a1; --brand2:#0ea5e9;
+    --ok:#15803d; --okbg:#dcfce7; --bad:#b91c1c; --badbg:#fee2e2;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;padding:0 0 130px;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    font-size:17px;line-height:1.5;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 14px;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  .head{background:linear-gradient(160deg,#0c4a6e,#0369a1);color:#fff;border:0}
+  .inst{font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;opacity:.9;font-weight:700}
+  .h1{font-size:1.16rem;font-weight:800;line-height:1.25;margin:6px 0 6px}
+  .sub{font-size:.9rem;margin:0;opacity:.92}
+  .ttl{font-size:1.02rem;font-weight:800;line-height:1.25;margin:0 0 6px}
+  .cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .badge{flex:0 0 auto;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:#f1f5f9;color:var(--muted);white-space:nowrap}
+  .badge.ok{background:var(--okbg);color:var(--ok);border-color:#86efac}
+  .hint{font-size:.86rem;color:var(--muted);margin:0 0 10px}
+  .lbl{display:block;font-weight:700;font-size:.9rem;margin:10px 0 4px;color:var(--muted)}
+  .inp{
+    width:100%;min-height:48px;font-size:1rem;padding:10px 12px;border:2px solid #cbd5e1;
+    border-radius:10px;background:#fff;color:var(--ink);font-family:inherit;margin:0 0 4px;
+    -webkit-appearance:none;appearance:none;
+  }
+  .inp:focus{outline:none;border-color:var(--brand2);box-shadow:0 0 0 3px rgba(14,165,233,.2)}
+  textarea.inp{min-height:130px;line-height:1.45;resize:vertical}
+  .btn{
+    display:block;width:100%;min-height:50px;border-radius:12px;border:0;padding:12px 14px;
+    font-family:inherit;font-size:1rem;font-weight:800;color:#fff;background:var(--brand2);
+    cursor:pointer;margin-top:10px;line-height:1.2;
+  }
+  .btn:active{transform:scale(.99)}
+  .btn:disabled{background:#94a3b8;cursor:not-allowed;box-shadow:none}
+  .btn-sec{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+  .btn-hub{background:#dc2626}
+  .btn-sw{background:#16a34a}
+  .btn-doc{background:#15803d;font-size:.95rem}
+  .btn-doc:disabled{background:#94a3b8}
+
+  /* ---------- Estación 1: pines ---------- */
+  .pins{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .pin{
+    min-height:68px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:4px;cursor:pointer;font-family:inherit;color:var(--ink);
+  }
+  .pin.sel{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(14,165,233,.25);background:#f0f9ff}
+  .pnum{font-size:.72rem;font-weight:800;color:var(--muted)}
+  .psw{display:block;width:26px;height:26px;border-radius:6px;border:1px solid #64748b}
+  .palette{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .chip{
+    min-height:64px;border:2px solid #cbd5e1;border-radius:10px;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:4px;cursor:pointer;font-family:inherit;color:var(--ink);
+  }
+  .chip.used{opacity:.3;cursor:not-allowed}
+  .sw{display:block;width:22px;height:22px;border-radius:5px;border:1px solid #64748b}
+  .cl{font-size:.6rem;font-weight:800;line-height:1.1;text-align:center}
+  .sw-bo{background:repeating-linear-gradient(135deg,#ffffff 0 6px,#f97316 6px 12px)}
+  .sw-o{background:#f97316}
+  .sw-bv{background:repeating-linear-gradient(135deg,#ffffff 0 6px,#22c55e 6px 12px)}
+  .sw-az{background:#2563eb}
+  .sw-ba{background:repeating-linear-gradient(135deg,#ffffff 0 6px,#3b82f6 6px 12px)}
+  .sw-v{background:#22c55e}
+  .sw-bm{background:repeating-linear-gradient(135deg,#ffffff 0 6px,#92400e 6px 12px)}
+  .sw-m{background:#92400e}
+  .sw-none{background:repeating-linear-gradient(45deg,#e2e8f0 0 5px,#f8fafc 5px 10px)}
+  .leds{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin:10px 0 6px}
+  .led{height:34px;border-radius:8px;background:#e2e8f0;border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#64748b}
+  .led.ok{background:#22c55e;border-color:#15803d;color:#fff}
+  .led.bad{background:#ef4444;border-color:#b91c1c;color:#fff}
+  .out{font-size:.9rem;border-radius:10px;padding:10px;margin-top:8px;display:none}
+  .out.show{display:block}
+  .out.ok{background:var(--okbg);color:var(--ok);border:1px solid #86efac;font-weight:700}
+  .out.bad{background:var(--badbg);color:var(--bad);border:1px solid #fca5a5;font-weight:700}
+
+  /* ---------- Estación 2: red ---------- */
+  .net{position:relative;height:320px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px}
+  .pc{
+    position:absolute;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:10px;
+    background:#e2e8f0;border:2px solid #94a3b8;display:flex;align-items:center;justify-content:center;
+    font-size:.72rem;font-weight:800;color:#334155;z-index:2;transition:box-shadow .25s,background .25s;
+  }
+  .pc.hit{box-shadow:0 0 0 5px #fbbf24;background:#fef3c7}
+  .dev{
+    position:absolute;transform:translate(-50%,-50%);width:88px;height:54px;border-radius:10px;
+    background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:.78rem;font-weight:800;letter-spacing:.03em;z-index:2;transition:background .3s;
+  }
+  .dev.dev-hub{background:#dc2626}
+  .dev.dev-sw{background:#16a34a}
+  .packet{position:absolute;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);
+    transition:left .7s linear, top .7s linear; z-index:3; box-shadow:0 0 8px rgba(0,0,0,.35)}
+  .log{font-size:.88rem;background:#f1f5f9;border:1px solid var(--line);border-radius:10px;padding:10px;min-height:48px;color:#334155;margin-top:8px}
+  .legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+  /* ---------- Estación 3: quiz ---------- */
+  .qt{font-size:.95rem;font-weight:700;margin:12px 0 8px}
+  .opt{
+    display:block;width:100%;text-align:left;min-height:50px;border:2px solid #cbd5e1;background:#fff;
+    border-radius:10px;padding:10px 12px;margin:0 0 8px;font-family:inherit;font-size:.94rem;
+    color:var(--ink);cursor:pointer;line-height:1.35;
+  }
+  .opt.ok{background:var(--okbg);border-color:#22c55e;color:var(--ok);font-weight:700}
+  .opt.bad{background:var(--badbg);border-color:#ef4444;color:var(--bad)}
+  .opt:disabled{opacity:.75}
+  .orderbox{display:flex;flex-direction:column;gap:8px}
+  .ord{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:52px;
+    border:2px solid #cbd5e1;background:#fff;border-radius:10px;padding:10px 12px;
+    font-family:inherit;font-size:.92rem;color:var(--ink);cursor:pointer;line-height:1.35;
+  }
+  .ord.picked{border-color:var(--brand2);background:#f0f9ff}
+  .ordn{flex:0 0 28px;height:28px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem}
+  .ord.picked .ordn{background:var(--brand2);color:#fff}
+
+  /* ---------- redacciones ---------- */
+  .essay{margin-top:14px;border-top:2px dashed var(--line);padding-top:12px}
+  .counter{font-size:.82rem;font-weight:700;color:var(--bad);margin-top:4px}
+  .counter.ok{color:var(--ok)}
+
+  /* ---------- checklist ---------- */
+  .chk{list-style:none;margin:0;padding:0}
+  .chk li{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;padding:5px 0;color:var(--muted)}
+  .chk li .mk{flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;background:#e2e8f0;color:#64748b}
+  .chk li.ok{color:var(--ok);font-weight:700}
+  .chk li.ok .mk{background:#22c55e;color:#fff}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:#fff;border-top:1px solid var(--line);box-shadow:0 -3px 12px rgba(15,23,42,.08);z-index:50}
+  .bar .wrap{padding:0}
+  .foot{font-size:.78rem;color:var(--muted);text-align:center;padding:4px 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= HEADER ================= -->
+  <header class="card head">
+    <div class="inst">Hardware I – 3er Año | Prof. Diego Rodríguez</div>
+    <h1 class="h1">Simulador Práctico: Redes LAN, Cobre y Fibra Óptica</h1>
+    <p class="sub">Completá las 3 estaciones y las 3 consignas de redacción para desbloquear el informe final.</p>
+  </header>
+
+  <!-- ================= DATOS ================= -->
+  <section class="card">
+    <div class="cardhead">
+      <h2 class="ttl">Datos del Alumno</h2>
+      <span class="badge" id="badgeDatos">Pendiente</span>
+    </div>
+    <label class="lbl" for="ape">Apellido(s) *</label>
+    <input class="inp" id="ape" type="text" inputmode="text" autocomplete="off" placeholder="Ej: Gómez">
+    <label class="lbl" for="nom">Nombre(s) *</label>
+    <input class="inp" id="nom" type="text" inputmode="text" autocomplete="off" placeholder="Ej: Lucía">
+    <label class="lbl" for="curso">Curso / División *</label>
+    <select class="inp" id="curso">
+      <option value="">Seleccioná tu curso…</option>
+      <option value="3° 1°">3° 1°</option>
+      <option value="3° 2°">3° 2°</option>
+      <option value="3° 3°">3° 3°</option>
+      <option value="3° 4°">3° 4°</option>
+      <option value="3° 5°">3° 5°</option>
+      <option value="3° 6°">3° 6°</option>
+      <option value="Otra división">Otra división</option>
+    </select>
+  </section>
+
+  <!-- ================= ESTACIÓN 1 ================= -->
+  <section class="card">
+    <div class="cardhead">
+      <h2 class="ttl">Estación 1 · Cable UTP – Norma T568B</h2>
+      <span class="badge" id="badge1">Pendiente</span>
+    </div>
+    <p class="hint">1) Tocá un pin (1 al 8). 2) Tocá el color que corresponde a ese pin. Cada color se usa una sola vez.</p>
+
+    <div class="pins" id="pins"></div>
+
+    <h3 class="ttl" style="font-size:.95rem;margin-top:6px;">Paleta de colores</h3>
+    <div class="palette" id="palette"></div>
+
+    <button class="btn btn-sec" id="btnReset1" type="button">Reiniciar cableado</button>
+    <button class="btn" id="btnTest" type="button">Probar con Tester de Red</button>
+
+    <div class="leds" id="leds" style="display:none;"></div>
+    <div class="out" id="testOut"></div>
+
+    <div class="essay">
+      <p class="qt">Consigna 1: <em>"Explica con tus palabras por qué los cables internos del UTP vienen trenzados de a pares y qué función cumple la herramienta crimpadora."</em></p>
+      <textarea class="inp" id="e1" placeholder="Escribí tu respuesta (mínimo 20 palabras)…"></textarea>
+      <div class="counter" id="c1">Palabras escritas: 0 / 20 mínimas</div>
+    </div>
+  </section>
+
+  <!-- ================= ESTACIÓN 2 ================= -->
+  <section class="card">
+    <div class="cardhead">
+      <h2 class="ttl">Estación 2 · Hub (Capa 1) vs Switch (Capa 2)</h2>
+      <span class="badge" id="badge2">Pendiente</span>
+    </div>
+    <p class="hint">Ejecutá las DOS simulaciones y observá cómo viaja el paquete en cada caso.</p>
+
+    <div class="net" id="net">
+      <div class="pc" id="pc1" style="left:12%;top:50%">PC1</div>
+      <div class="pc" id="pc2" style="left:50%;top:13%">PC2</div>
+      <div class="pc" id="pc3" style="left:50%;top:87%">PC3</div>
+      <div class="pc" id="pc4" style="left:88%;top:50%">PC4</div>
+      <div class="dev" id="dev" style="left:50%;top:50%">HUB / SWITCH</div>
+    </div>
+
+    <button class="btn btn-hub" id="btnHub" type="button">Enviar paquete en HUB (Capa 1)</button>
+    <button class="btn btn-sw" id="btnSwitch" type="button">Enviar paquete en SWITCH (Capa 2)</button>
+
+    <div class="log" id="log2">Elegí un equipo y enviá el paquete desde PC1 hacia PC4.</div>
+    <div class="legend">
+      <span><span class="dot" style="background:#dc2626"></span>Broadcast (a todos)</span>
+      <span><span class="dot" style="background:#16a34a"></span>Unicast (solo al destino)</span>
+    </div>
+
+    <div class="essay">
+      <p class="qt">Consigna 2: <em>"Describe la diferencia técnica observada en la simulación entre el envío de datos de un Hub y un Switch en cuanto a tráfico y seguridad."</em></p>
+      <textarea class="inp" id="e2" placeholder="Escribí tu respuesta (mínimo 20 palabras)…"></textarea>
+      <div class="counter" id="c2">Palabras escritas: 0 / 20 mínimas</div>
+    </div>
+  </section>
+
+  <!-- ================= ESTACIÓN 3 ================= -->
+  <section class="card">
+    <div class="cardhead">
+      <h2 class="ttl">Estación 3 · Infraestructura y Fibra Óptica</h2>
+      <span class="badge" id="badge3">Pendiente</span>
+    </div>
+
+    <p class="qt">a) Infraestructura edilicia</p>
+    <p class="hint" style="margin-bottom:6px;">¿Qué estructura es la "sala de máquinas" de planta baja, donde convergen los cables del proveedor de Internet/telefonía y se conectan los equipos del edificio?</p>
+    <button class="opt" type="button" data-q="q1a" data-ok="1">MDF (Main Distribution Frame)</button>
+    <button class="opt" type="button" data-q="q1a" data-ok="0">Backbone</button>
+    <button class="opt" type="button" data-q="q1a" data-ok="0">NIC (Tarjeta de Red)</button>
+
+    <p class="hint" style="margin:10px 0 6px;">¿Qué estructura es el conducto vertical de altísima velocidad que interconecta las LAN de cada piso?</p>
+    <button class="opt" type="button" data-q="q1b" data-ok="0">MDF (Main Distribution Frame)</button>
+    <button class="opt" type="button" data-q="q1b" data-ok="1">Backbone (Columna Vertebral)</button>
+
+    <p class="qt">b) Secuencia de fusión de fibra óptica</p>
+    <p class="hint" style="margin-bottom:6px;">Tocá los 4 pasos en el orden correcto (1 → 4).</p>
+    <div class="orderbox" id="orderBox"></div>
+    <div class="out" id="orderMsg"></div>
+
+    <p class="qt">c) ODF y Regla de Oro</p>
+    <p class="hint" style="margin-bottom:6px;">¿Qué es un ODF (Optical Distribution Frame)?</p>
+    <button class="opt" type="button" data-q="q3a" data-ok="1">Un distribuidor que integra empalmes, terminaciones, adaptadores y conectores de fibra en una unidad compacta y segura (ej: caja FTTH).</button>
+    <button class="opt" type="button" data-q="q3a" data-ok="0">Una herramienta que realiza el corte perpendicular a 90° de la fibra.</button>
+    <button class="opt" type="button" data-q="q3a" data-ok="0">Un switch de Capa 2 que conecta las PCs de una oficina.</button>
+
+    <p class="hint" style="margin:10px 0 6px;">¿Cuál es la "Regla de Oro" en el montaje de fibra óptica en exteriores?</p>
+    <button class="opt" type="button" data-q="q3b" data-ok="1">Respetar los radios de curvatura apropiados para no quebrar el núcleo de vidrio.</button>
+    <button class="opt" type="button" data-q="q3b" data-ok="0">Reemplazar la fibra por cable UTP categoría 5e en el backbone.</button>
+    <button class="opt" type="button" data-q="q3b" data-ok="0">Empalmar las fibras con cinta aisladora para evitar pérdidas.</button>
+
+    <div class="essay">
+      <p class="qt">Consigna 3: <em>"¿Por qué es indispensable utilizar una cortadora de precisión (Cleaver) a 90° antes de introducir la fibra óptica en la fusionadora?"</em></p>
+      <textarea class="inp" id="e3" placeholder="Escribí tu respuesta (mínimo 20 palabras)…"></textarea>
+      <div class="counter" id="c3">Palabras escritas: 0 / 20 mínimas</div>
+    </div>
+  </section>
+
+  <!-- ================= CHECKLIST ================= -->
+  <section class="card">
+    <h2 class="ttl">Estado del trabajo</h2>
+    <p class="hint">El botón de descarga se habilita cuando TODOS los ítems están en verde.</p>
+    <ul class="chk" id="chk"></ul>
+  </section>
+
+  <p class="foot">Hardware I · 3er Año — Prof. Diego Rodríguez · Simulador educativo sin dependencias externas pesadas.</p>
+</div>
+
+<!-- ================= BARRA INFERIOR ================= -->
+<div class="bar">
+  <div class="wrap">
+    <button class="btn btn-doc" id="btnDoc" type="button" disabled>DESCARGAR INFORME PRÁCTICO (.DOC)</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =========================================================
+     UTILIDADES
+     ========================================================= */
+  function $(id){ return document.getElementById(id); }
+
+  function wordCount(str){
+    var s = String(str || '').replace(/\s+/g, ' ').trim();
+    if(!s) return 0;
+    return s.split(' ').filter(function(w){ return w.length > 0; }).length;
+  }
+
+  function esc(s){
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\r?\n/g, '<br>');
+  }
+
+  function onlyName(s){
+    return String(s || '').trim().replace(/[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+/g, '_').replace(/^_+|_+$/g, '') || 'Alumno';
+  }
+
+  /* =========================================================
+     ESTADO GLOBAL
+     ========================================================= */
+  var state = {
+    st1: false,
+    st1Attempts: 0,
+    hubDone: false,
+    swDone: false,
+    quizFails: 0,
+    quiz: { q1a:false, q1b:false, q2:false, q3a:false, q3b:false }
+  };
+
+  /* =========================================================
+     ESTACIÓN 1 — CABLE UTP T568B
+     ========================================================= */
+  var T568B = ['bo','o','bv','az','ba','v','bm','m'];
+
+  var NAMES = {
+    bo:'Blanco-Naranja', o:'Naranja', bv:'Blanco-Verde', az:'Azul',
+    ba:'Blanco-Azul', v:'Verde', bm:'Blanco-Marrón', m:'Marrón'
+  };
+  var SHORT = {
+    bo:'Bco-Nar', o:'Naranja', bv:'Bco-Ver', az:'Azul',
+    ba:'Bco-Azu', v:'Verde', bm:'Bco-Mar', m:'Marrón'
+  };
+  /* Orden de la paleta mezclado a propósito (no debe revelar la norma) */
+  var PALETTE_ORDER = ['az','bo','v','bm','o','ba','bv','m'];
+
+  var pins = [null,null,null,null,null,null,null,null];
+  var selectedPin = 0;
+
+  var pinsEl = $('pins');
+  var paletteEl = $('palette');
+
+  function renderPins(){
+    pinsEl.innerHTML = '';
+    for(var i = 0; i < 8; i++){
+      (function(idx){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pin' + (selectedPin === idx ? ' sel' : '');
+        b.setAttribute('aria-label', 'Pin ' + (idx + 1));
+        var c = pins[idx];
+        b.innerHTML =
+          '<span class="pnum">Pin ' + (idx + 1) + '</span>' +
+          '<span class="psw ' + (c ? 'sw-' + c : 'sw-none') + '"></span>';
+        b.addEventListener('click', function(){
+          selectedPin = idx;
+          renderPins();
+        });
+        pinsEl.appendChild(b);
+      })(i);
+    }
+  }
+
+  function renderPalette(){
+    paletteEl.innerHTML = '';
+    var used = {};
+    pins.forEach(function(c){ if(c) used[c] = true; });
+
+    PALETTE_ORDER.forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (used[c] ? ' used' : '');
+      b.disabled = !!used[c];
+      b.innerHTML = '<span class="sw sw-' + c + '"></span><span class="cl">' + SHORT[c] + '</span>';
+      b.title = NAMES[c];
+      b.addEventListener('click', function(){ assignColor(c); });
+      paletteEl.appendChild(b);
+    });
+  }
+
+  function assignColor(c){
+    pins[selectedPin] = c;
+    /* Avanzar al siguiente pin vacío */
+    var next = -1;
+    for(var i = selectedPin + 1; i < 8; i++){ if(!pins[i]){ next = i; break; } }
+    if(next === -1){
+      for(var j = 0; j < 8; j++){ if(!pins[j]){ next = j; break; } }
+    }
+    if(next !== -1) selectedPin = next;
+    renderPins();
+    renderPalette();
+    updateUI();
+  }
+
+  $('btnReset1').addEventListener('click', function(){
+    pins = [null,null,null,null,null,null,null,null];
+    selectedPin = 0;
+    state.st1 = false;
+    $('testOut').className = 'out';
+    $('testOut').textContent = '';
+    $('leds').style.display = 'none';
+    renderPins();
+    renderPalette();
+    updateUI();
+  });
+
+  $('btnTest').addEventListener('click', function(){
+    state.st1Attempts++;
+    var wrong = [];
+    for(var i = 0; i < 8; i++){
+      if(pins[i] !== T568B[i]) wrong.push(i + 1);
+    }
+
+    /* LEDs */
+    var leds = $('leds');
+    leds.style.display = 'grid';
+    leds.innerHTML = '';
+    for(var k = 0; k < 8; k++){
+      var d = document.createElement('div');
+      d.className = 'led ' + (pins[k] === T568B[k] ? 'ok' : 'bad');
+      d.textContent = (k + 1);
+      leds.appendChild(d);
+    }
+
+    var out = $('testOut');
+    if(wrong.length === 0){
+      state.st1 = true;
+      out.className = 'out show ok';
+      out.innerHTML = '✔ ¡APROBADO! Los 8 pares coinciden con la norma T568B. LEDs en verde: enlace correcto.';
+    } else {
+      state.st1 = false;
+      out.className = 'out show bad';
+      var detalle = wrong.map(function(n){
+        var actual = pins[n-1] ? NAMES[pins[n-1]] : 'pin vacío';
+        return 'Pin ' + n + ' (tenés: ' + actual + ' / debe ser: ' + NAMES[T568B[n-1]] + ')';
+      }).join(' · ');
+      out.innerHTML = '✘ ERROR en ' + wrong.length + ' pin(es): ' + detalle + '. Corregí y volvé a probar.';
+    }
+    updateUI();
+  });
+
+  /* =========================================================
+     ESTACIÓN 2 — HUB vs SWITCH
+     ========================================================= */
+  var NETPOS = {
+    pc1:{ left:'12%', top:'50%' },
+    pc2:{ left:'50%', top:'13%' },
+    pc3:{ left:'50%', top:'87%' },
+    pc4:{ left:'88%', top:'50%' },
+    dev:{ left:'50%', top:'50%' }
+  };
+
+  var netEl = $('net');
+  var animating = false;
+
+  function mkPacket(color, pos){
+    var p = document.createElement('div');
+    p.className = 'packet';
+    p.style.background = color;
+    p.style.left = pos.left;
+    p.style.top = pos.top;
+    netEl.appendChild(p);
+    return p;
+  }
+
+  function moveTo(p, pos){
+    p.style.left = pos.left;
+    p.style.top = pos.top;
+  }
+
+  function flashNode(id){
+    var el = $(id);
+    if(!el) return;
+    el.classList.add('hit');
+    setTimeout(function(){ el.classList.remove('hit'); }, 800);
+  }
+
+  function runSim(mode){
+    if(animating) return;
+    animating = true;
+
+    var isHub = (mode === 'hub');
+    var color = isHub ? '#dc2626' : '#16a34a';
+    var targets = isHub ? ['pc2','pc3','pc4'] : ['pc4'];
+    var dev = $('dev');
+
+    dev.textContent = isHub ? 'HUB · C1' : 'SWITCH · C2';
+    dev.className = 'dev ' + (isHub ? 'dev-hub' : 'dev-sw');
+
+    $('log2').textContent = isHub
+      ? 'Enviando desde PC1… el HUB (Capa 1) replica el frame a TODOS los puertos: Broadcast + colisiones.'
+      : 'Enviando desde PC1… el SWITCH (Capa 2) conmuta el frame SOLO al puerto de PC4: Unicast eficiente.';
+
+    flashNode('pc1');
+    var p = mkPacket(color, NETPOS.pc1);
+    setTimeout(function(){ moveTo(p, NETPOS.dev); }, 40);
+    setTimeout(function(){ if(p.parentNode) p.parentNode.removeChild(p); }, 820);
+
+    setTimeout(function(){
+      targets.forEach(function(t, i){
+        setTimeout(function(){
+          var q = mkPacket(color, NETPOS.dev);
+          setTimeout(function(){ moveTo(q, NETPOS[t]); }, 40);
+          setTimeout(function(){ flashNode(t); }, 620);
+          setTimeout(function(){ if(q.parentNode) q.parentNode.removeChild(q); }, 1000);
+        }, i * 130);
+      });
+    }, 820);
+
+    setTimeout(function(){
+      animating = false;
+      if(isHub){ state.hubDone = true; }
+      else { state.swDone = true; }
+      $('log2').textContent += isHub
+        ? '  ► Resultado: tráfico innecesario y riesgo de seguridad.'
+        : '  ► Resultado: tráfico eficiente, rápido y seguro.';
+      updateUI();
+    }, 2100);
+  }
+
+  $('btnHub').addEventListener('click', function(){ runSim('hub'); });
+  $('btnSwitch').addEventListener('click', function(){ runSim('switch'); });
+
+  /* =========================================================
+     ESTACIÓN 3 — QUIZ + SECUENCIA
+     ========================================================= */
+  var opts = document.querySelectorAll('.opt');
+  Array.prototype.forEach.call(opts, function(b){
+    b.addEventListener('click', function(){
+      var q = b.getAttribute('data-q');
+      if(state.quiz[q]) return;
+
+      if(b.getAttribute('data-ok') === '1'){
+        b.classList.add('ok');
+        if(b.textContent.indexOf('✔') !== 0){
+          b.textContent = '✔ ' + b.textContent;
+        }
+        state.quiz[q] = true;
+        Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + q + '"]'), function(o){
+          o.disabled = true;
+        });
+        updateUI();
+      } else {
+        state.quizFails++;
+        b.classList.add('bad');
+        setTimeout(function(){ b.classList.remove('bad'); }, 900);
+      }
+    });
+  });
+
+  var FUSION = {
+    1: 'Pelar la fibra (retirar el revestimiento) y limpiar estrictamente con alcohol isopropílico',
+    2: 'Corte de precisión a 90° exactos con la cortadora (Cleaver)',
+    3: 'Alineación de los núcleos en la ranura en V (Holder)',
+    4: 'Fusión por arco eléctrico entre los electrodos'
+  };
+  var SHUF = [3, 1, 4, 2];
+  var orderPicks = [];
+  var orderBox = $('orderBox');
+
+  function orderMsg(txt, tipo){
+    var m = $('orderMsg');
+    m.className = 'out show ' + tipo;
+    m.textContent = txt;
+  }
+
+  function renderOrder(){
+    orderBox.innerHTML = '';
+    SHUF.forEach(function(id){
+      var b = document.createElement('button');
+      b.type = 'button';
+      var idx = orderPicks.indexOf(id);
+      b.className = 'ord' + (idx >= 0 ? ' picked' : '');
+      b.innerHTML = '<span class="ordn">' + (idx >= 0 ? (idx + 1) : '') + '</span><span>' + FUSION[id] + '</span>';
+      b.addEventListener('click', function(){ pickOrder(id); });
+      orderBox.appendChild(b);
+    });
+  }
+
+  function pickOrder(id){
+    if(state.quiz.q2) return;
+    if(orderPicks.indexOf(id) !== -1) return;
+
+    orderPicks.push(id);
+
+    if(orderPicks.length === 4){
+      var ok = true;
+      for(var i = 0; i < 4; i++){
+        if(orderPicks[i] !== (i + 1)){ ok = false; break; }
+      }
+      if(ok){
+        state.quiz.q2 = true;
+        orderMsg('✔ Secuencia correcta: preparación → corte a 90° → alineación en V → fusión por arco.', 'ok');
+      } else {
+        state.quizFails++;
+        orderPicks = [];
+        orderMsg('✘ Orden incorrecto. Recordá: primero se prepara y limpia, después se corta, luego se alinea y por último se fusiona.', 'bad');
+      }
+    }
+    renderOrder();
+    updateUI();
+  }
+
+  /* =========================================================
+     CONTADORES DE PALABRAS
+     ========================================================= */
+  function updateCounter(idTxt, idCnt, min){
+    var w = wordCount($(idTxt).value);
+    var el = $(idCnt);
+    el.textContent = 'Palabras escritas: ' + w + ' / ' + min + ' mínimas';
+    if(w >= min){ el.classList.add('ok'); } else { el.classList.remove('ok'); }
+    return w;
+  }
+
+  ['e1','e2','e3'].forEach(function(id){
+    $(id).addEventListener('input', updateUI);
+  });
+  ['ape','nom'].forEach(function(id){
+    $(id).addEventListener('input', updateUI);
+  });
+  $('curso').addEventListener('change', updateUI);
+
+  /* =========================================================
+     UI GLOBAL / CHECKLIST
+     ========================================================= */
+  function setBadge(id, ok, txtPend, txtOk){
+    var el = $(id);
+    if(ok){
+      el.className = 'badge ok';
+      el.textContent = txtOk;
+    } else {
+      el.className = 'badge';
+      el.textContent = txtPend;
+    }
+  }
+
+  function station3Done(){
+    return state.quiz.q1a && state.quiz.q1b && state.quiz.q2 && state.quiz.q3a && state.quiz.q3b;
+  }
+
+  function getChecklist(){
+    var ape = $('ape').value.trim();
+    var nom = $('nom').value.trim();
+    var cur = $('curso').value;
+    var w1 = wordCount($('e1').value);
+    var w2 = wordCount($('e2').value);
+    var w3 = wordCount($('e3').value);
+
+    return [
+      { ok: (ape.length > 0 && nom.length > 0 && cur !== ''), txt: 'Datos del alumno: apellido, nombre y curso' },
+      { ok: state.st1, txt: 'Estación 1: Tester de red T568B aprobado' },
+      { ok: (state.hubDone && state.swDone), txt: 'Estación 2: simulaciones de Hub y de Switch ejecutadas' },
+      { ok: station3Done(), txt: 'Estación 3: las 5 consignas técnicas resueltas correctamente' },
+      { ok: w1 >= 20, txt: 'Redacción 1 (mín. 20 palabras) — llevás ' + w1 },
+      { ok: w2 >= 20, txt: 'Redacción 2 (mín. 20 palabras) — llevás ' + w2 },
+      { ok: w3 >= 20, txt: 'Redacción 3 (mín. 20 palabras) — llevás ' + w3 }
+    ];
+  }
+
+  function updateUI(){
+    var ape = $('ape').value.trim();
+    var nom = $('nom').value.trim();
+    var cur = $('curso').value;
+
+    setBadge('badgeDatos', (ape && nom && cur), 'Pendiente', 'Completo');
+    setBadge('badge1', state.st1, 'Pendiente', 'APROBADA');
+    setBadge('badge2', (state.hubDone && state.swDone), 'Pendiente', 'COMPLETADA');
+    setBadge('badge3', station3Done(), 'Pendiente', 'APROBADA');
+
+    updateCounter('e1', 'c1', 20);
+    updateCounter('e2', 'c2', 20);
+    updateCounter('e3', 'c3', 20);
+
+    var list = getChecklist();
+    var allOk = true;
+    var ul = $('chk');
+    ul.innerHTML = '';
+    list.forEach(function(item){
+      if(!item.ok) allOk = false;
+      var li = document.createElement('li');
+      li.className = item.ok ? 'ok' : '';
+      li.innerHTML = '<span class="mk">' + (item.ok ? '✔' : '•') + '</span><span>' + item.txt + '</span>';
+      ul.appendChild(li);
+    });
+
+    $('btnDoc').disabled = !allOk;
+    $('btnDoc').textContent = allOk
+      ? 'DESCARGAR INFORME PRÁCTICO (.DOC)'
+      : 'BLOQUEADO · completá los ítems pendientes';
+  }
+
+  /* =========================================================
+     GENERACIÓN DEL INFORME .DOC (BLINDADO PARA ANDROID)
+     ========================================================= */
+  function buildDocHtml(){
+    var ape = $('ape').value.trim();
+    var nom = $('nom').value.trim();
+    var cur = $('curso').value;
+
+    var now = new Date();
+    var fecha = now.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    var hora  = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+
+    var r1 = $('e1').value;
+    var r2 = $('e2').value;
+    var r3 = $('e3').value;
+    var w1 = wordCount(r1), w2 = wordCount(r2), w3 = wordCount(r3);
+
+    var est1 = state.st1 ? 'APROBADA' : 'NO APROBADA';
+    var est2 = (state.hubDone && state.swDone) ? 'COMPLETADA' : 'INCOMPLETA';
+    var est3 = station3Done() ? 'APROBADA' : 'INCOMPLETA';
+
+    var sim2 = 'Hub: ' + (state.hubDone ? 'ejecutada' : 'no ejecutada') +
+               ' / Switch: ' + (state.swDone ? 'ejecutada' : 'no ejecutada');
+
+    var html = '';
+    html += "<html xmlns:o='urn:schemas-microsoft-com:office:office' ";
+    html += "xmlns:w='urn:schemas-microsoft-com:office:word' ";
+    html += "xmlns='http://www.w3.org/TR/REC-html40'>";
+    html += "<head><meta charset='utf-8'><title>Informe Practico Hardware I</title>";
+    html += "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>";
+    html += "<w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->";
+    html += "<style>";
+    html += "@page{size:A4;margin:2cm 2cm 2cm 2cm;}";
+    html += "body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000000;}";
+    html += "h1{font-family:Calibri,Arial,sans-serif;font-size:16pt;margin:0 0 6pt 0;}";
+    html += "h2{font-family:Calibri,Arial,sans-serif;font-size:13pt;margin:14pt 0 6pt 0;border-bottom:1px solid #000000;padding-bottom:3pt;}";
+    html += "h3{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:10pt 0 4pt 0;}";
+    html += "p{margin:0 0 6pt 0;text-align:justify;}";
+    html += "table{border-collapse:collapse;width:100%;margin:6pt 0 10pt 0;}";
+    html += "td,th{border:1px solid #000000;padding:5pt;vertical-align:top;font-size:10.5pt;text-align:left;}";
+    html += "th{background:#E8EEF4;font-weight:bold;}";
+    html += "ul{margin:0 0 8pt 18pt;padding:0;}li{margin:0 0 3pt 0;}";
+    html += ".firma{margin-top:26pt;font-size:10pt;}";
+    html += "</style></head><body>";
+
+    html += "<h1>Informe Práctico: Redes LAN, Cobre y Fibra Óptica</h1>";
+
+    html += "<table>";
+    html += "<tr><th style='width:28%'>Institución / Materia</th><td>Hardware I – 3er Año</td></tr>";
+    html += "<tr><th>Docente</th><td>Prof. Diego Rodríguez</td></tr>";
+    html += "<tr><th>Alumno</th><td>" + esc(ape + ', ' + nom) + "</td></tr>";
+    html += "<tr><th>Curso / División</th><td>" + esc(cur) + "</td></tr>";
+    html += "<tr><th>Fecha y hora</th><td>" + esc(fecha + ' — ' + hora) + " hs</td></tr>";
+    html += "</table>";
+
+    html += "<h2>1. Resumen de resultados de las estaciones</h2>";
+    html += "<table>";
+    html += "<tr><th style='width:34%'>Estación</th><th style='width:22%'>Estado</th><th>Detalle / Intentos</th></tr>";
+    html += "<tr><td>1. Armado de cable UTP (Norma T568B) y Tester</td><td><b>" + est1 + "</b></td><td>Pruebas con tester realizadas: " + state.st1Attempts + "</td></tr>";
+    html += "<tr><td>2. Tráfico Hub (Capa 1) vs Switch (Capa 2)</td><td><b>" + est2 + "</b></td><td>" + esc(sim2) + "</td></tr>";
+    html += "<tr><td>3. Infraestructura edilicia y fibra óptica</td><td><b>" + est3 + "</b></td><td>Consignas técnicas (MDF, Backbone, fusión, ODF, radios de curvatura). Respuestas incorrectas: " + state.quizFails + "</td></tr>";
+    html += "</table>";
+
+    html += "<h2>2. Consignas de desarrollo</h2>";
+
+    html += "<h3>Consigna 1 (Estación 1): ¿Por qué los cables internos del UTP vienen trenzados de a pares y qué función cumple la crimpadora?</h3>";
+    html += "<p>" + esc(r1) + "</p>";
+    html += "<p><i>Cantidad de palabras: " + w1 + "</i></p>";
+
+    html += "<h3>Consigna 2 (Estación 2): Diferencia técnica entre el envío de datos de un Hub y un Switch en cuanto a tráfico y seguridad.</h3>";
+    html += "<p>" + esc(r2) + "</p>";
+    html += "<p><i>Cantidad de palabras: " + w2 + "</i></p>";
+
+    html += "<h3>Consigna 3 (Estación 3): ¿Por qué es indispensable la cortadora de precisión (Cleaver) a 90° antes de la fusionadora?</h3>";
+    html += "<p>" + esc(r3) + "</p>";
+    html += "<p><i>Cantidad de palabras: " + w3 + "</i></p>";
+
+    html += "<h2>3. Guía para transcripción y fundamentación en carpeta física</h2>";
+    html += "<p>El alumno deberá pasar a su carpeta de clase, en forma manuscrita y con letra clara, los siguientes puntos:</p>";
+    html += "<ul>";
+    html += "<li><b>Norma T568B:</b> transcribir el orden de los 8 pines (1: Blanco-Naranja, 2: Naranja, 3: Blanco-Verde, 4: Azul, 5: Blanco-Azul, 6: Verde, 7: Blanco-Marrón, 8: Marrón) y explicar para qué se utiliza el tester de red.</li>";
+    html += "<li><b>Par trenzado:</b> fundamentar por qué los conductores se trenzan de a pares (cancelación de interferencias electromagnéticas externas y diafonía) y describir la función de la crimpadora o ponchadora.</li>";
+    html += "<li><b>Hub vs Switch:</b> comparar Capa 1 (broadcast, tráfico innecesario, colisiones) frente a Capa 2 (unicast, tráfico eficiente, rápido y seguro).</li>";
+    html += "<li><b>MDF y Backbone:</b> definir ubicación y función de la sala de máquinas (planta baja) y de la columna vertebral vertical de alta velocidad.</li>";
+    html += "<li><b>Fusión de fibra óptica:</b> detallar la secuencia de 4 pasos (pelado y limpieza con alcohol isopropílico, corte a 90° con cleaver, alineación en ranura en V, fusión por arco eléctrico) y justificar la precisión del corte.</li>";
+    html += "<li><b>ODF y Regla de Oro:</b> explicar la función del distribuidor óptico (empalmes, terminaciones y conectores en una unidad segura) y la importancia de respetar los radios de curvatura para no quebrar el núcleo de vidrio.</li>";
+    html += "</ul>";
+
+    html += "<p class='firma'>Firma del alumno: ______________________________ &nbsp;&nbsp;&nbsp; Fecha: " + esc(fecha) + "</p>";
+    html += "<p class='firma'>Prof. Diego Rodríguez — Hardware I (3er Año)</p>";
+
+    html += "</body></html>";
+    return html;
+  }
+
+  function descargarDoc(){
+    if($('btnDoc').disabled) return;
+
+    var ape = $('ape').value.trim();
+    var nom = $('nom').value.trim();
+    var contenido = buildDocHtml();
+
+    var tipo = 'application/msword;charset=utf-8';
+    var blob;
+    try {
+      blob = new Blob(['\ufeff', contenido], { type: tipo });
+    } catch(e){
+      /* Fallback para WebViews antiguos */
+      var bb = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
+      bb.append('\ufeff' + contenido);
+      blob = bb.getBlob(tipo);
+    }
+
+    var nombreArchivo = 'TP_Hardware1_' + onlyName(ape) + '_' + onlyName(nom) + '.doc';
+
+    /* Fallback: si no hay createObjectURL, usar data URI */
+    if(!window.URL || !window.URL.createObjectURL){
+      var a0 = document.createElement('a');
+      a0.href = 'data:' + tipo + ',' + encodeURIComponent('\ufeff' + contenido);
+      a0.download = nombreArchivo;
+      document.body.appendChild(a0);
+      a0.click();
+      setTimeout(function(){ if(a0.parentNode) a0.parentNode.removeChild(a0); }, 1500);
+      return;
+    }
+
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nombreArchivo;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    /* Disparo programático del click (compatible con Chrome/Firefox Android) */
+    try {
+      a.click();
+    } catch(e){
+      var ev = document.createEvent('MouseEvents');
+      ev.initEvent('click', true, true);
+      a.dispatchEvent(ev);
+    }
+
+    /* Limpieza diferida: evita descargas cortadas o archivos de 0 bytes */
+    setTimeout(function(){
+      if(a.parentNode) a.parentNode.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1500);
+  }
+
+  $('btnDoc').addEventListener('click', descargarDoc);
+
+  /* =========================================================
+     INICIALIZACIÓN
+     ========================================================= */
+  renderPins();
+  renderPalette();
+  renderOrder();
+  updateUI();
+})();
+</script>
+</body>
+</html>
